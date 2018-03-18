@@ -1,6 +1,11 @@
 'use strict';
 
 const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+const Rollup = require('broccoli-rollup');
+const BabelTranspiler = require('broccoli-babel-transpiler');
+const resolve = require('rollup-plugin-node-resolve');
+const commonjs = require('rollup-plugin-commonjs');
+
 
 module.exports = function(defaults) {
   let app = new EmberApp(defaults, {
@@ -20,5 +25,24 @@ module.exports = function(defaults) {
   // please specify an object with the list of modules as keys
   // along with the exports of each module as its value.
 
-  return app.toTree();
+  let rollupTree = new Rollup('node_modules/inversify', {
+    rollup: {
+      input: 'lib/inversify.js',
+      plugins: [
+        resolve(),
+        commonjs(),
+      ],
+      output: {
+        file: 'inversify.js',
+        format: 'es',
+      }
+    }
+  });
+
+  const babel = app.project.findAddonByName('ember-cli-babel');
+  const babelOptions = babel.buildBabelOptions();
+
+  let tree = new BabelTranspiler(rollupTree, babelOptions);
+
+  return app.toTree(tree);
 };
